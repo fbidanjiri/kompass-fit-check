@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kompass fit check</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Geologica:wght@400;600&family=Mulish:wght@400;700&display=swap');
+  :root{
+    --ink:#190F36; --green:#71F89F; --blue:#1E6AFF; --navy:#0E259E;
+    --purple:#AB58FF; --amber:#FBB911; --red:#FF4B53; --mist:#DEE4ED;
+    --tint:#F6F8FB; --ink-soft:#5C5476; --ink-faint:#8E88A0;
+    --green-ink:#0B6B3E; --amber-ink:#8A5A00;
+    --head:'Geologica',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --body:'Mulish',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+  header{background:var(--ink);color:#fff;padding:28px 32px 24px}
+  .grad{height:5px;width:180px;background:linear-gradient(90deg,var(--green) 0%,var(--blue) 100%);margin-bottom:18px;border-radius:3px}
+  header .eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--green);margin-bottom:10px}
+  header h1{font-family:var(--head);font-weight:600;font-size:30px;margin:0 0 8px}
+  header p{margin:0;color:#B9C2D2;max-width:760px}
+  header .meta{margin-top:14px;font-size:12px;color:var(--ink-faint)}
+  main{max-width:760px;margin:0 auto}
+  #formcol{padding:26px 32px 60px;min-width:0}
+  section{margin-bottom:26px}
+  h2{font-family:var(--head);font-weight:600;font-size:15px;margin:0 0 4px;text-transform:uppercase;letter-spacing:.09em;color:var(--blue)}
+  section > .hint{color:var(--ink-faint);font-size:13px;margin:0 0 14px}
+  .q{padding:12px 0;border-top:1px solid var(--mist)}
+  .q:first-of-type{border-top:none}
+  .q.sub{border-top:none;margin-left:16px;padding:10px 0 10px 14px;border-left:2px solid var(--purple)}
+  .followup{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--purple);margin-bottom:4px}
+  .q label.lbl{display:block;font-weight:700;font-size:14px;margin-bottom:2px}
+  .q .why{color:var(--ink-faint);font-size:12.5px;margin-bottom:9px}
+  .opts{display:flex;flex-wrap:wrap;gap:7px}
+  .opts button{font-family:var(--body);font-size:13px;padding:7px 13px;border-radius:999px;border:1px solid var(--mist);
+    background:#fff;color:var(--ink-soft);cursor:pointer;transition:.12s}
+  .opts button:hover{border-color:var(--blue);color:var(--blue)}
+  .opts button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
+  .opts[data-multi="true"] button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy)}
+  .opts[data-multi="true"] button[aria-pressed="true"]::before{content:"✓ "}
+  .q input[type=text],.q input[type=email],.q input[type=number],.q input[type=date]{
+    width:100%;max-width:360px;font-family:var(--body);font-size:14px;padding:8px 11px;
+    border-radius:8px;border:1px solid var(--mist);color:var(--ink);background:#fff}
+  .q input:focus{outline:2px solid var(--blue);outline-offset:1px}
+  .acct-row{display:flex;gap:7px;align-items:center;margin-bottom:7px}
+  .acct-row input{flex:1;max-width:220px}
+  .acct-row button{font-family:var(--body);font-size:12.5px;padding:6px 10px;border-radius:7px;border:1px solid var(--mist);background:#fff;color:var(--ink-soft);cursor:pointer}
+  .acct-row button:hover{border-color:var(--red);color:var(--red)}
+  #addAcct{font-family:var(--body);font-size:12.5px;padding:6px 10px;border-radius:7px;border:1px solid var(--mist);background:#fff;color:var(--ink-soft);cursor:pointer}
+  #addAcct:hover{border-color:var(--blue);color:var(--blue)}
+  .actions{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap;border-top:1px solid var(--mist);padding-top:20px}
+  .actions button{font-family:var(--body);font-weight:700;font-size:13px;padding:10px 15px;border-radius:8px;border:none;cursor:pointer}
+  #submit{background:var(--green-ink);color:#fff}
+  #submit:disabled{opacity:.6;cursor:default}
+  #reset{background:#fff;color:var(--ink-soft);border:1px solid var(--mist)}
+  .submit-status{font-size:12.5px;margin-top:9px}
+  .submit-status.ok{color:var(--green-ink)}
+  .submit-status.err{color:#B3242B}
+  footer{padding:18px 32px 34px;border-top:1px solid var(--mist);color:var(--ink-faint);font-size:12px}
+  code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12.5px;background:var(--tint);padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">Zesty · Solution architecture</div>
+  <div class="grad"></div>
+  <h1>Kompass fit check</h1>
+  <p>Please fill this out ahead of your Kompass PoV — it takes about 10 minutes, and helps us scope
+     things correctly before kickoff. Some questions only appear once an earlier answer makes them
+     relevant. When you're done, hit "Submit to Zesty".</p>
+  <div class="meta">Submitting this form sends your answers to Zesty for PoV scoping — nothing else is shared.</div>
+</header>
+
+<main>
+<div id="formcol">
+  <div id="intake"></div>
+  <div id="form"></div>
+  <div class="actions">
+    <button id="submit">Submit to Zesty</button>
+    <button id="reset">Reset answers</button>
+  </div>
+  <div class="submit-status" id="submitStatus"></div>
+</div>
+</main>
+
+<footer>
+  Questions about anything on this page? Reach out to your Zesty contact — happy to walk through it together.
+</footer>
+
+<script>
+const API_URL = "https://ft134c58eh.execute-api.us-west-2.amazonaws.com/submissions";
+
+const QUESTIONS = [
+  { section:"Platform and autoscaling", hint:"",
+    items:[
+      { id:"autoscaler", label:"Node autoscaler",
+        opts: s => {
+          if (s.cloud==="AWS / EKS") return ["Karpenter","Cluster Autoscaler","Managed node groups only","EKS Auto Mode","None","Not sure","Other"];
+          if (s.cloud==="Azure / AKS") return ["Cluster Autoscaler","AKS Node Auto Provisioning (NAP, Karpenter-based)","None","Not sure","Other"];
+          if (s.cloud==="Oracle / OKE") return ["Cluster Autoscaler","Karpenter (Oracle's KPO provider)","None","Not sure","Other"];
+          if (s.cloud==="Rancher (RKE / RKE2)") return ["Cluster Autoscaler","Manual / fixed node pools","None","Not sure","Other"];
+          return ["Karpenter","Cluster Autoscaler","Managed node groups only","Manual / fixed node pools","None","Not sure","Other"];
+        }, otherText:true, showIf: s => !!s.cloud },
+      { id:"kver", label:"Kubernetes version",
+        opts:["1.33 or above","1.28 – 1.32","Below 1.28","Not sure"] },
+      { id:"hpa", label:"HPA or KEDA coverage",
+        opts:["Most workloads","Some workloads","None"] },
+      { id:"vpaExisting", label:"Existing Vertical Pod Autoscaler (VPA) on these workloads",
+        opts:["Not running","Yes — Off / Initial mode (recommendations only)","Yes — Auto or Recreate mode","Not sure"] },
+    ]},
+  { section:"Scale and workload mix", hint:"",
+    items:[
+      { id:"nodes", label:"Node count",
+        opts:["Under 20","20 – 100","100 – 1,000","Over 1,000"] },
+      { id:"workloads", label:"Workload count",
+        opts:["Under 1,000","1,000 – 10,000","Over 10,000","Not sure"] },
+      { id:"mix", label:"Workload kinds in meaningful volume", multi:true,
+        opts:["Deployments","StatefulSets","Jobs / CronJobs","DaemonSets","Other"], otherText:true },
+      { id:"pdb", label:"PodDisruptionBudget coverage",
+        opts:["Most workloads","Some workloads","None"] },
+      { id:"javaWorkloads", label:"Java / JVM workloads present",
+        opts:["No","Yes, some","Yes, most"] },
+      { id:"jvmMetrics", label:"Interested in JVM-aware rightsizing (optional)",
+        opts:["Yes","No","Not sure yet"],
+        showIf: s => s.javaWorkloads === "Yes, some" || s.javaWorkloads === "Yes, most" },
+    ]},
+  { section:"Networking and cluster policy", hint:"",
+    items:[
+      { id:"cni", label:"CNI plugin",
+        opts: s => {
+          if (s.cloud==="AWS / EKS") return ["AWS VPC CNI (default)","Cilium","Calico","Other","Not sure"];
+          if (s.cloud==="Azure / AKS") return ["Azure CNI (default)","Cilium (Azure CNI Powered by Cilium)","Calico","Kubenet","Other","Not sure"];
+          if (s.cloud==="Oracle / OKE") return ["OCI VCN-Native CNI (default)","Flannel","Cilium","Calico","Other","Not sure"];
+          if (s.cloud==="Rancher (RKE / RKE2)") return ["Canal (Calico + Flannel, RKE2 default)","Calico","Cilium","Flannel","Other","Not sure"];
+          return ["Cilium","Calico","Other","Not sure"];
+        }, otherText:true, showIf: s => !!s.cloud },
+      { id:"ciliumMode", label:"Cilium IPAM mode",
+        opts:["ENI / native routing","Chaining with VPC CNI","Overlay (cluster-pool, VXLAN or Geneve)","Not sure"],
+        showIf: s => (s.cni||"").includes("Cilium") },
+      { id:"internetAccess", label:"Cluster can reach the Helm chart repo and pull images from ECR/registries",
+        opts:["Yes","No — restricted or mirrored","Not sure"] },
+      { id:"egressPolicy", label:"Egress restricted to an explicit allow-list",
+        opts:["No, egress is open","Yes, default-deny with an allow-list","Not sure"],
+        showIf: s => s.internetAccess === "Yes" },
+      { id:"mesh", label:"Service mesh with restricted egress",
+        opts:["No mesh, or open egress","Mesh with restricted egress","Not sure"] },
+      { id:"meshType", label:"Which mesh",
+        opts:["Istio","Linkerd","Other"], otherText:true,
+        showIf: s => s.mesh === "Mesh with restricted egress" },
+      { id:"imds", label:"Instance metadata restricted",
+        opts:["No restriction","Restricted or IMDSv2-only","Not sure"] },
+      { id:"webhooks", label:"Third-party mutating webhooks", multi:true,
+        opts:["Kyverno","OPA / Gatekeeper","Datadog Admission Controller","Service mesh sidecar injector","Other","None"], otherText:true },
+    ]},
+  { section:"Delivery and cost visibility", hint:"",
+    items:[
+      { id:"gitops", label:"GitOps tooling",
+        opts:["None","Argo CD","Flux","Rancher Fleet","Other"], otherText:true },
+      { id:"gitopsFix", label:"Field-manager drift exclusion already configured",
+        opts:["Not yet","Yes, already configured","Not sure"],
+        showIf: s => s.gitops === "Argo CD" || s.gitops === "Flux" || s.gitops === "Rancher Fleet" || s.gitops === "Other" },
+      { id:"deployMethod", label:"Installing via Helm CLI or Terraform",
+        opts:["Helm CLI","Terraform (Helm provider)","Not sure","Other"], otherText:true },
+      { id:"helmVersion", label:"Helm CLI version 3.14.0 or higher",
+        opts:["Yes","No","Not sure"],
+        showIf: s => s.deployMethod === "Helm CLI" },
+      { id:"terraformVersion", label:"Terraform Helm provider version 2.17 or higher",
+        opts:["Yes","No","Not sure"],
+        showIf: s => s.deployMethod === "Terraform (Helm provider)" },
+      { id:"cur", label: s => {
+          if (s.cloud==="Azure / AKS") return "Cost Management export available";
+          if (s.cloud==="Oracle / OKE") return "OCI Usage Report available";
+          return "Cost and Usage Report (CUR) available";
+        },
+        opts: s => {
+          if (s.cloud==="Azure / AKS") return ["Yes — tenant-wide","Yes — subscription-level only","No"];
+          if (s.cloud==="Oracle / OKE") return ["Yes — tenancy-wide","Yes — compartment-level only","No"];
+          return ["Yes — management payer","Yes — sub-accounts only","No"];
+        }, showIf: s => !!s.cloud },
+      { id:"storage", label: s => {
+          if (s.cloud==="Azure / AKS") return "Azure Disk CSI driver and an expandable storage class";
+          if (s.cloud==="Oracle / OKE") return "OCI Block Volume CSI driver and an expandable storage class";
+          if (s.cloud==="Rancher (RKE / RKE2)") return "A CSI driver and an expandable storage class";
+          return "EBS CSI driver and an expandable storage class";
+        },
+        opts:["Yes","No","Not sure"], showIf: s => !!s.cloud },
+    ]},
+];
+
+// Rendered as its own section at the end of the form (lowest priority) — see renderForm().
+const AUDIT_LOGGING_Q = { id:"auditLogging", label: s => {
+    if (s.cloud==="Azure / AKS") return "AKS diagnostic logs enabled (kube-audit category)";
+    if (s.cloud==="Oracle / OKE") return "OKE control-plane audit logging enabled (OCI Audit service)";
+    if (s.cloud==="Rancher (RKE / RKE2)") return "Kubernetes API server audit logging enabled";
+    return "EKS control-plane audit logging enabled";
+  },
+  opts:["No","Yes","Not sure"] };
+
+// Asked first, at the top of the form (inside intake) — everything else above
+// (autoscaler options, CNI options, account ID field, etc.) depends on it.
+const CLOUD_Q = { id:"cloud", label:"Cloud and Kubernetes flavor",
+  opts:["AWS / EKS","Azure / AKS","Oracle / OKE","Rancher (RKE / RKE2)","Other or self-managed"] };
+
+const state = {};
+const intake = { awsAccountIds:[""] };
+
+/* ---------- shared opts wiring ---------- */
+function wireOptsGroup(root, target, after, excludeIds, onlyIds){
+  root.querySelectorAll(".opts").forEach(group => {
+    const id = group.dataset.id;
+    if (onlyIds && !onlyIds.includes(id)) return;
+    if (excludeIds && excludeIds.includes(id)) return;
+    const multi = group.dataset.multi === "true";
+    group.addEventListener("click", e => {
+      const b = e.target.closest("button"); if(!b) return;
+      if (multi){
+        const arr = Array.isArray(target[id]) ? target[id].slice() : [];
+        const i = arr.indexOf(b.dataset.v);
+        if (i>=0) arr.splice(i,1); else arr.push(b.dataset.v);
+        target[id] = arr;
+      } else {
+        const already = target[id] === b.dataset.v;
+        if (already) delete target[id];
+        else target[id] = b.dataset.v;
+      }
+      if (after) after();
+    });
+  });
+}
+
+/* ---------- verdict engine ---------- */
+function assess(){
+  const g = (k)=>state[k];
+  const ga = (k)=> Array.isArray(state[k]) ? state[k] : [];
+  const caps = [];
+  const flags = [];
+  const integrationNotes = [];
+  const other = g("cloud")==="Other or self-managed";
+  const oke = g("cloud")==="Oracle / OKE";
+  const rancher = g("cloud")==="Rancher (RKE / RKE2)";
+  const aws = g("cloud")==="AWS / EKS";
+  const azure = g("cloud")==="Azure / AKS";
+  const oldK = g("kver")==="Below 1.28";
+  const preInPlace = g("kver")==="1.28 – 1.32";
+  const karpenter = (g("autoscaler")||"").includes("Karpenter");
+  const cas = g("autoscaler")==="Cluster Autoscaler";
+  const mix = ga("mix");
+
+  function cap(name, pillar, verdict, notes){ caps.push({name, pillar, verdict, notes}); }
+
+  // Cost visibility
+  {
+    const n=[]; let v="in";
+    if (other){ v="out"; n.push("No documented support outside AWS, Azure, Oracle OKE and Rancher."); }
+    else {
+      if (azure || oke || rancher) n.push((azure?"Azure":oke?"Oracle OKE":"Rancher") + " visibility coverage is an open question internally — confirm the current matrix.");
+      if (g("cur")==="No") { v="risk"; n.push("No cost export means list price only, not your negotiated rates."); }
+      if ((g("cur")||"").includes("only")) n.push("A scoped export works; an org-wide export is also supported and preferable.");
+      n.push("Needs no write permissions — the natural place to start a POC.");
+    }
+    cap("Compute cost visibility", "04 · Consolidation and governance", v, n);
+  }
+
+  // MDA / rightsizing
+  {
+    const n=[]; let v="in";
+    if (other){ v="out"; n.push("No documented support outside AWS, Azure, Oracle OKE and Rancher."); }
+    else if (oldK){ v="out"; n.push("Below the Kubernetes 1.28 floor."); }
+    else {
+      if (preInPlace){ v="risk"; n.push("Below 1.33, so changes land through a gradual rollout rather than in-place resize."); }
+      if (g("kver")==="Not sure") { v="risk"; n.push("Confirm the version — it decides in-place resize versus rollout."); }
+      if (mix.includes("Jobs / CronJobs")) n.push("Jobs are supported, grouped through a VirtualWorkload of type JobsGroup.");
+      if (g("hpa")==="None") n.push("Replica optimization needs an HPA; request rightsizing still applies without one.");
+    }
+    cap("Multi-dimensional autoscaling", "02 · Capital efficiency · 01 · Engineering velocity", v, n);
+  }
+
+  // Placement
+  {
+    const n=[]; let v="in";
+    if (other || oldK){ v="out"; n.push("Depends on rightsizing, which is unavailable here."); }
+    else if (!karpenter && !cas){ v="out"; n.push("Requires Karpenter or Cluster Autoscaler — managed node groups alone will not consolidate."); }
+    else {
+      if (mix.includes("Jobs / CronJobs") && !mix.includes("Deployments") && !mix.includes("StatefulSets")){
+        v="risk"; n.push("Jobs and CronJobs are never evicted, and with little else in the mix the addressable share is small.");
+      } else if (mix.includes("Jobs / CronJobs")){
+        n.push("Jobs and CronJobs in the mix are never evicted by placement — factor that into the addressable share.");
+      }
+      if (g("nodes")==="Under 20"){ v="risk"; n.push("Under about 20 nodes there is rarely enough fragmentation to show a result."); }
+      if (g("pdb")==="None"){ v="risk"; n.push("No PDBs anywhere is a real availability risk — raise coverage before enabling."); }
+      n.push("Requires rightsizing to be enabled; same pricing, no separate cost.");
+    }
+    cap("Adaptive pod placement", "02 · Capital efficiency", v, n);
+  }
+
+  // PV autoscaling
+  {
+    const n=[]; let v="risk";
+    if (other){ v="out"; n.push("No documented support outside AWS, Azure, Oracle OKE and Rancher."); }
+    else if (g("storage")==="No"){ v="out"; n.push("Needs the EBS CSI driver and an expandable storage class."); }
+    else {
+      if (mix.includes("Deployments") && !mix.includes("StatefulSets")) n.push("Deployments dominate the reported mix — check whether there are actually PVCs to reclaim.");
+      n.push("Check the node-OS support matrix for this cluster before promising anything.");
+      n.push("Internals are not documented; do not improvise how the decision is made.");
+    }
+    cap("PV autoscaling", "02 · Capital efficiency", v, n);
+  }
+
+  /* install blockers to pre-empt */
+  if (g("vpaExisting")==="Yes — Auto or Recreate mode") flags.push("<b>VPA already applying changes</b> (Auto/Recreate mode) — this will conflict with Kompass rightsizing on the same workloads, since both set pod resource requests. Disable VPA's write mode, or scope it off the workloads Kompass will manage, before enabling rightsizing.");
+  if (g("vpaExisting")==="Yes — Off / Initial mode (recommendations only)") flags.push("VPA is present but recommendation-only, so no conflict today — confirm it stays out of Auto/Recreate mode before scaling out Kompass rightsizing.");
+  if (g("vpaExisting")==="Not sure") flags.push("Confirm whether <b>VPA</b> is running and in which mode before enabling rightsizing — Auto/Recreate mode conflicts directly with Kompass.");
+
+  const ciliumSelected = (g("cni")||"").includes("Cilium");
+  const calicoSelected = (g("cni")||"").includes("Calico");
+  if (ciliumSelected){
+    const cpLabel = aws ? "EKS control plane" : "Kubernetes control plane (validated specifically on EKS — confirm the equivalent elsewhere)";
+    if (g("ciliumMode")==="Overlay (cluster-pool, VXLAN or Geneve)") flags.push("<b>Cilium overlay mode</b> — admission webhooks aren't reachable from the " + cpLabel + " as-is (rejected with “Address is not allowed” on EKS). Needs cert-manager moved to the host network (one Helm value) plus a small host-network proxy in front of the rightsizing webhook — a validated pattern on EKS, about 30 minutes per cluster. Keep pod placement disabled on this cluster: its webhook fails open and silently does nothing on overlay.");
+    if (g("ciliumMode")==="Not sure") flags.push("Confirm the <b>Cilium IPAM mode</b> before install (<code>kubectl -n kube-system get configmap cilium-config -o yaml</code>) — ENI mode and chaining need nothing extra; overlay needs the host-network configuration above.");
+  }
+  if (calicoSelected) flags.push("<b>Calico</b> — not yet validated by Zesty, but the same rule applies: if pod IPs aren't VPC-routable (Calico overlay or natOutgoing), admission webhooks fail the same way Cilium overlay does. Check pod IPs against the VPC CIDRs before install.");
+
+  if (g("internetAccess")==="No — restricted or mirrored") flags.push("<b>No direct internet access</b> — the Helm chart (<code>https://zesty-co.github.io/kompass</code>) needs to be mirrored into an internal repo, and images (ECR, quay.io, registry.k8s.io, Docker Hub) need to be mirrored into a private registry nodes can reach. The Kompass bridge and telemetry (<code>kompass-kafka.zesty.co</code>, Coralogix) also need an outbound path, even if just through a proxy.");
+  if (g("internetAccess")==="Not sure") flags.push("Confirm whether this cluster has direct internet access before install day — it changes whether the chart and images can be pulled directly or need to be mirrored first.");
+
+  if (g("egressPolicy")==="Yes, default-deny with an allow-list"){
+    const idNote = aws ? "IRSA or Pod Identity" : azure ? "Workload Identity" : oke ? "Instance Principals" : "your workload identity mechanism";
+    const awsNote = aws ? "" : " (the exact destinations below are EKS-documented — confirm the equivalents for your cloud)";
+    flags.push("<b>Default-deny egress</b>" + awsNote + " — before install, allow: the Kubernetes API (443) and kube-dns (53); the Kompass bridge's Kafka channel to <code>kompass-kafka.zesty.co</code> on <b>9094–9097</b>; STS and S3 in-region (443); <code>api.pricing.us-east-1.amazonaws.com</code> (443); Coralogix telemetry at <code>ingress.eu2.coralogix.com</code> (443, on by default); and instance metadata 169.254.169.254 on port 80 if not using " + idNote + ". On Cilium specifically, a bare <code>*</code> wildcard matches exactly one DNS label — <code>*.amazonaws.com</code> won't match <code>sts.eu-west-1.amazonaws.com</code>; use the two-label pattern instead.");
+  }
+  if (g("egressPolicy")==="Not sure") flags.push("Confirm whether egress is default-deny before install day — if it is, the Kompass bridge's Kafka channel (9094–9097 to <code>kompass-kafka.zesty.co</code>) is the one that's easy to miss.");
+
+  if (g("mesh")==="Mesh with restricted egress"){
+    const mt = g("meshType");
+    if (!mt || mt==="Istio") flags.push("<b>Service mesh egress</b> (Istio) — add service entries for STS, EC2, S3, the pricing endpoints and Zesty telemetry, then restart the deployments. Expect 503 no-healthy-upstream until you do.");
+    else {
+      const label = mt==="Other" ? (g("meshType_other")||"this mesh") : mt;
+      flags.push("<b>" + label + " with restricted egress</b> — the documented fix (service entries for STS/EC2/S3/pricing/telemetry) is written for Istio specifically; confirm the equivalent configuration for " + label + " before install.");
+    }
+  }
+
+  if (g("imds")==="Restricted or IMDSv2-only") flags.push("<b>Instance metadata restricted</b> — set account ID, region and cluster name statically in values. The account ID must be a quoted string.");
+  if (g("deployMethod")==="Terraform (Helm provider)"){
+    if (g("terraformVersion")==="No") flags.push("<b>Terraform Helm provider too old</b> — needs to be 2.17 or higher, or chart rendering fails with an invalid semantic-version error (<code>semverCompare</code>).");
+    else if (g("terraformVersion")==="Not sure") flags.push("Confirm the <b>Terraform Helm provider version</b> before install day — it needs to be 2.17 or higher, or chart rendering fails with an invalid semantic-version error.");
+  } else {
+    if (g("helmVersion")==="No") flags.push("<b>Helm CLI too old</b> — needs to be 3.14.0 or higher, or chart rendering fails with an invalid semantic-version error (<code>semverCompare</code>).");
+    else if (g("helmVersion")==="Not sure") flags.push("Confirm the <b>Helm CLI version</b> before install day — run <code>helm version --short</code> and check for 3.14+, or chart rendering fails with an invalid semantic-version error.");
+  }
+
+  if (g("gitops")==="Argo CD" && g("gitopsFix")!=="Yes, already configured") flags.push("<b>Argo CD</b> — disable Helm priority hooks or the Action Taker never gets its webhook certificate, and set <code>ignoreDifferences</code> with <code>managedFieldsManagers: [action-taker]</code> to stop it reporting permanent drift.");
+  if (g("gitops")==="Flux" && g("gitopsFix")!=="Yes, already configured") flags.push("<b>Flux</b> — confirm hook ordering behaves (the certificate chain is the usual failure), and exclude Kompass's action-taker field manager the same way Argo CD does.");
+  if (g("gitops")==="Rancher Fleet" && g("gitopsFix")!=="Yes, already configured") flags.push("<b>Rancher Fleet</b> — same principle as Argo CD/Flux: exclude Kompass's own field manager (<code>action-taker</code>), typically via Fleet's <code>diff</code> / drift-detection ignore rules, or it will treat Kompass's changes as drift and can revert them.");
+  if (g("gitops")==="Other" && g("gitopsFix")!=="Yes, already configured") flags.push("<b>GitOps tool" + (g("gitops_other") ? " (" + g("gitops_other") + ")" : "") + "</b> — same principle as Argo CD/Flux: it needs to ignore Kompass's own field manager (<code>action-taker</code>) or it will treat Kompass's changes as drift and can revert them. Confirm how this tool expresses that exclusion.");
+
+  const webhooksSelected = ga("webhooks").filter(w => w !== "None");
+  const policyWebhooks = webhooksSelected.filter(w => w==="Kyverno" || w==="OPA / Gatekeeper");
+  const sidecarWebhooks = webhooksSelected.filter(w => w==="Datadog Admission Controller" || w==="Service mesh sidecar injector");
+  const otherWebhooks = webhooksSelected.filter(w => w==="Other");
+  if (policyWebhooks.length) flags.push("<b>Policy-mutating webhook</b> (" + policyWebhooks.join(", ") + ") — these can rewrite or reject the same pod resource fields Kompass writes. Check for a policy that sets/defaults CPU or memory requests and exclude Kompass's field manager (<code>action-taker</code>), or the two will fight over ownership.");
+  if (sidecarWebhooks.length) flags.push("<b>Sidecar/instrumentation injector</b> (" + sidecarWebhooks.join(", ") + ") — doesn't touch the app container's resources directly, but re-injects on every pod recreation (including a rollout-based resize on pre-1.33 clusters) and adds its own container to the pod's footprint. Confirm its webhook <code>failurePolicy</code> isn't <code>Fail</code> against a flaky backend, or Kompass's rollouts can get blocked too.");
+  if (otherWebhooks.length) flags.push("<b>Other mutating webhook</b>" + (g("webhooks_other") ? " (" + g("webhooks_other") + ")" : "") + " — confirm whether it touches pod resource fields (treat like Kyverno/OPA) or just adds a container (treat like Datadog/sidecar injection) before install.");
+
+  if (g("nodes")==="Over 1,000" || g("workloads")==="Over 10,000") flags.push("<b>Large estate</b> — use VictoriaMetrics cluster mode, and note there is no published maximum cluster size. Do not quote one.");
+
+  const auditLogLabel = azure ? "AKS diagnostic logging" : oke ? "OKE audit logging" : rancher ? "API server audit logging" : "EKS audit logging";
+  if (g("auditLogging")==="No") flags.push("<b>" + auditLogLabel + " off</b> — turn it on before relying on it as a corroborating record of Kompass's changes; Kompass's own audit metrics only retain one week.");
+  if (g("auditLogging")==="Not sure") flags.push("Confirm whether <b>" + auditLogLabel + "</b> is on — it's the durable, independent record of Kompass's changes, and it isn't on by default.");
+
+  flags.push("Always: if an existing <b>kube-state-metrics</b> is running, point Kompass at it rather than installing a second copy. A wrong endpoint produces no error and no recommendations, ever.");
+  if (g("deployMethod")==="Terraform (Helm provider)") flags.push("<b>Terraform</b> — set <code>wait = false</code> on the Helm release, or the provider deadlocks waiting for a pod that needs a hook-created certificate.");
+  if (intake.ksmExisting==="Yes") flags.push("<b>kube-state-metrics already running</b>" + (intake.ksmEndpoint ? " at <code>"+intake.ksmEndpoint+"</code>" : "") + " (per intake) — point Kompass at it during install, do not deploy a second copy.");
+
+  /* integration notes — not blockers, just scoping */
+  if (g("jvmMetrics")==="Yes") integrationNotes.push("JVM-aware rightsizing: expose /actuator/prometheus (Micrometer) or /metrics (JMX Exporter) on each Java app, declare the metrics port as a containerPort, and label the pods (monitoring.zesty.co/jvm: \"enabled\"). Each future Kompass upgrade needs the jvm-metrics values file passed again, or collection switches off.");
+
+  /* sizing hint */
+  let sizing = [];
+  const wl = g("workloads");
+  if (wl === "Under 1,000") sizing.push("VictoriaMetrics 30 GB · Insights PVC 1 GB");
+  else if (wl === "1,000 – 10,000") sizing.push("VictoriaMetrics 60 GB · Insights PVC 3 GB up to 5,000 workloads, 10 GB above");
+  else if (wl === "Over 10,000") sizing.push("VictoriaMetrics 100 GB · Insights PVC 20 GB");
+  if (sizing.length){
+    const big = g("nodes")==="100 – 1,000" || g("nodes")==="Over 1,000" || wl==="Over 10,000";
+    sizing.push(big ? "VictoriaMetrics <b>cluster mode</b> — production, 100+ nodes or 1,000+ pods" : "VictoriaMetrics single-pod mode is fine at this scale");
+    sizing.push("Storage class must set <code>allowVolumeExpansion: true</code>");
+    if (g("internetAccess")==="No — restricted or mirrored") sizing.push("Air-gapped or mirrored registry: triple the disk sizes above");
+  }
+  if (g("auditLogging")==="Yes") sizing.push("The audit trail (kompass_rs_audit_event / kompass_rs_recommendations) retains one week in-cluster by default — not a substitute for control-plane audit logs on anything compliance-sensitive.");
+
+  /* overall */
+  const visibleTotal = QUESTIONS.reduce((a,s)=>a + s.items.filter(q=>!q.showIf||q.showIf(state)).length, 0) + (state.cloud ? 1 : 0);
+  const nIn = caps.filter(c=>c.verdict==="in").length;
+  const nRisk = caps.filter(c=>c.verdict==="risk").length;
+  // A caveated capability is still sellable, just with a condition attached.
+  const score = nIn + 0.6 * nRisk;
+  const answered = Object.keys(state).length;
+  let head, sub;
+  if (answered < 6){ head = "Keep going"; sub = `Answered ${answered} of ${visibleTotal}. The verdict firms up as you go.`; }
+  else if (other){ head = "Not a fit"; sub = "No documented support for this platform. Worth logging as a competitive loss reason rather than running a POC."; }
+  else if (score >= 2.8){ head = "Strong fit"; sub = "Most of the platform applies. Lead with visibility, then rightsizing, and scope the rest."; }
+  else if (score >= 1.4){ head = "Scoped fit"; sub = "Run it, but say up front which pillars are out of scope and why. That honesty is what makes the POC credible."; }
+  else { head = "Weak fit"; sub = "Little of the platform applies as configured. Decide whether the prerequisites are worth their effort before proposing a POC."; }
+
+  return {caps, flags, integrationNotes, sizing, head, sub};
+}
+
+/* ---------- render ---------- */
+// Note: the fit/verdict analysis (assess()) still runs and is included in the
+// emailed summary and submission payload — it's just not rendered on the page.
+// This is internal scoping information, not shown to whoever is filling the form out.
+
+function rerenderForm(){ const y=window.scrollY; renderForm(); renderIntake(); window.scrollTo(0,y); }
+function rerenderIntake(){ const y=window.scrollY; renderIntake(); window.scrollTo(0,y); }
+
+function renderIntake(){
+  const root = document.getElementById("intake");
+  root.innerHTML = `
+    <section>
+      <h2>Customer intake</h2>
+      <div class="q">
+        <label class="lbl" for="companyName">Company name</label>
+        <input type="text" id="companyName" placeholder="Acme Corp" value="${intake.companyName||""}">
+      </div>
+      <div class="q">
+        <label class="lbl" for="filledByName">Filled out by</label>
+        <input type="text" id="filledByName" placeholder="Jane Doe" style="margin-bottom:7px" value="${intake.filledByName||""}">
+        <input type="email" id="filledByEmail" placeholder="jane@customer.com" value="${intake.filledByEmail||""}">
+      </div>
+      <div class="q">
+        <label class="lbl" for="povStartDate">Target PoV start date</label>
+        <input type="date" id="povStartDate" value="${intake.povStartDate||""}">
+      </div>
+      <div class="q">
+        <label class="lbl">${resolveField(CLOUD_Q.label, state)}</label>
+        <div class="opts" data-id="cloud" data-multi="false">
+          ${resolveOpts(CLOUD_Q, state).map(o => `<button type="button" aria-pressed="${state.cloud===o}" data-v="${o}">${o}</button>`).join("")}
+        </div>
+      </div>
+      <div class="q">
+        <label class="lbl" for="clusterCount">Number of Kubernetes clusters</label>
+        <input type="number" id="clusterCount" min="0" placeholder="e.g. 4" value="${intake.clusterCount||""}">
+      </div>
+      ${state.cloud ? `
+      <div class="q">
+        <label class="lbl">${accountFieldInfo().label}</label>
+        <div id="acctRows"></div>
+        <button type="button" id="addAcct">+ Add account</button>
+      </div>` : ""}
+    </section>`;
+
+  ["companyName","filledByName","filledByEmail","clusterCount","povStartDate"].forEach(id=>{
+    document.getElementById(id).addEventListener("input", e=> intake[id] = e.target.value);
+  });
+
+  if (state.cloud){
+    renderAcctRows();
+    document.getElementById("addAcct").addEventListener("click", ()=>{ intake.awsAccountIds.push(""); renderAcctRows(); });
+  }
+
+  // Cloud answer lives in `state` (shared with the rest of the form below), not `intake` —
+  // wire it separately and exclude it from the generic intake-opts wiring.
+  const cloudGroup = root.querySelector('.opts[data-id="cloud"]');
+  if (cloudGroup){
+    cloudGroup.addEventListener("click", e=>{
+      const b = e.target.closest("button"); if (!b) return;
+      if (state.cloud === b.dataset.v) delete state.cloud; else state.cloud = b.dataset.v;
+      rerenderForm();
+    });
+  }
+  wireOptsGroup(root, intake, rerenderIntake, ["cloud"]);
+}
+
+function accountFieldInfo(){
+  const c = state.cloud;
+  if (c==="AWS / EKS") return { label:"AWS account ID(s) with EKS", hint:"One or more 12-digit account IDs where the EKS clusters live.", placeholder:"123456789012", numeric:true, err:"At least one AWS account ID is required." };
+  if (c==="Azure / AKS") return { label:"Azure subscription ID(s) with AKS", hint:"One or more subscription IDs (GUIDs) where the AKS clusters live.", placeholder:"00000000-0000-0000-0000-000000000000", numeric:false, err:"At least one Azure subscription ID is required." };
+  if (c==="Oracle / OKE") return { label:"OCI tenancy OCID(s) with OKE", hint:"One or more tenancy OCIDs where the OKE clusters live.", placeholder:"ocid1.tenancy.oc1..aaaaaaaa", numeric:false, err:"At least one OCI tenancy OCID is required." };
+  if (c==="Rancher (RKE / RKE2)") return { label:"Cluster or account identifier(s)", hint:"Rancher cluster ID, or the underlying account/subscription ID where these clusters run.", placeholder:"c-m-xxxxxxxx", numeric:false, err:"At least one cluster or account identifier is required." };
+  // "Other or self-managed" — this field is hidden entirely until cloud is answered,
+  // so by the time this runs it's a deliberate choice, not a default.
+  return { label:"Account or subscription ID(s) hosting these clusters", hint:"Whatever applies to your environment.", placeholder:"e.g. 123456789012, or a subscription/tenancy ID", numeric:false, err:"At least one account or subscription identifier is required." };
+}
+
+function renderAcctRows(){
+  const wrap = document.getElementById("acctRows");
+  const info = accountFieldInfo();
+  wrap.innerHTML = intake.awsAccountIds.map((v,i) => `
+    <div class="acct-row">
+      <input type="text" ${info.numeric ? 'inputmode="numeric" maxlength="12"' : ''} placeholder="${info.placeholder}" data-i="${i}" value="${v}">
+      ${intake.awsAccountIds.length>1 ? `<button type="button" data-remove="${i}">Remove</button>` : ""}
+    </div>`).join("");
+  wrap.querySelectorAll("input").forEach(inp=>{
+    inp.addEventListener("input", e=>{ intake.awsAccountIds[+e.target.dataset.i] = e.target.value.trim(); });
+  });
+  wrap.querySelectorAll("[data-remove]").forEach(b=>{
+    b.addEventListener("click", e=>{ intake.awsAccountIds.splice(+e.target.dataset.remove,1); renderAcctRows(); });
+  });
+}
+
+function resolveField(v, s){ return typeof v === "function" ? v(s) : v; }
+
+function resolveOpts(q, s){
+  const opts = resolveField(q.opts, s);
+  // drop stale selections that no longer belong to this question's current option set
+  // (e.g. "EKS Auto Mode" lingering after the cloud answer changes away from AWS)
+  if (!q.multi && s[q.id] != null && !opts.includes(s[q.id])) delete s[q.id];
+  if (q.multi && Array.isArray(s[q.id])) s[q.id] = s[q.id].filter(v => opts.includes(v));
+  return opts;
+}
+
+function renderForm(){
+  const root = document.getElementById("form");
+
+  const auditVisible = !!state.cloud;
+  const obsPressed = o => Array.isArray(intake.observability) && intake.observability.includes(o);
+  const obsOther = Array.isArray(intake.observability) && intake.observability.includes("Other");
+  // Lowest-priority section — existing tooling context and a nice-to-have visibility
+  // question, intentionally last. Mixes state-backed (auditLogging) and intake-backed
+  // (observability, ksmExisting) fields; wired separately below.
+  const lastSection = `
+    <section>
+      <h2>Observability and monitoring</h2>
+      <div class="q">
+        <label class="lbl">Existing observability stack</label>
+        <div class="opts" data-id="observability" data-multi="true">
+          ${["Datadog","Prometheus","CloudWatch","Splunk","Other","None"].map(o=>`<button type="button" aria-pressed="${obsPressed(o)}" data-v="${o}">${o}</button>`).join("")}
+        </div>
+        ${obsOther ? `<input type="text" id="observabilityOther" placeholder="Please specify" style="margin-top:8px" value="${intake.observabilityOther||""}">` : ""}
+      </div>
+      <div class="q">
+        <label class="lbl">Existing kube-state-metrics deployment</label>
+        <div class="opts" data-id="ksmExisting" data-multi="false">
+          ${["No","Yes","Not sure"].map(o=>`<button type="button" aria-pressed="${intake.ksmExisting===o}" data-v="${o}">${o}</button>`).join("")}
+        </div>
+      </div>
+      ${intake.ksmExisting==="Yes" ? `
+      <div class="q sub">
+        <div class="followup">Follow-up</div>
+        <label class="lbl" for="ksmEndpoint">Existing kube-state-metrics service (namespace/service name)</label>
+        <input type="text" id="ksmEndpoint" placeholder="e.g. monitoring/kube-state-metrics" value="${intake.ksmEndpoint||""}">
+      </div>` : ""}
+      ${auditVisible ? `
+      <div class="q">
+        <label class="lbl">${resolveField(AUDIT_LOGGING_Q.label, state)}</label>
+        <div class="opts" data-id="auditLogging" data-multi="false">
+          ${AUDIT_LOGGING_Q.opts.map(o=>`<button type="button" aria-pressed="${state.auditLogging===o}" data-v="${o}">${o}</button>`).join("")}
+        </div>
+      </div>` : ""}
+    </section>`;
+
+  root.innerHTML = QUESTIONS.map(sec => {
+    const visible = sec.items.filter(q => !q.showIf || q.showIf(state));
+    if (!visible.length) return "";
+    return `
+    <section>
+      <h2>${sec.section}</h2>
+      ${sec.hint ? `<p class="hint">${sec.hint}</p>` : ""}
+      ${visible.map(q => {
+        const label = resolveField(q.label, state);
+        if (q.type === "text"){
+          return `
+        <div class="q${q.showIf ? ' sub' : ''}">
+          ${q.showIf ? '<div class="followup">Follow-up</div>' : ''}
+          <label class="lbl" for="tf_${q.id}">${label}</label>
+          <input type="text" id="tf_${q.id}" data-text-for="${q.id}" placeholder="${q.placeholder||''}" value="${state[q.id]||''}">
+        </div>`;
+        }
+        const opts = resolveOpts(q, state);
+        const why = resolveField(q.why, state) || "";
+        const whyLine = why + (q.multi ? (why ? " " : "") + "Select all that apply." : "");
+        const pressed = o => q.multi ? (Array.isArray(state[q.id]) && state[q.id].includes(o)) : (state[q.id]===o);
+        const showOther = q.otherText && (q.multi ? (Array.isArray(state[q.id]) && state[q.id].includes("Other")) : state[q.id]==="Other");
+        return `
+        <div class="q${q.showIf ? ' sub' : ''}">
+          ${q.showIf ? '<div class="followup">Follow-up</div>' : ''}
+          <label class="lbl">${label}</label>
+          ${whyLine ? `<div class="why">${whyLine}</div>` : ""}
+          <div class="opts" data-id="${q.id}" data-multi="${q.multi?'true':'false'}">
+            ${opts.map(o => `<button type="button" aria-pressed="${pressed(o)}" data-v="${o}">${o}</button>`).join("")}
+          </div>
+          ${showOther ? `<input type="text" class="other-input" data-other-for="${q.id}" placeholder="Please specify" style="margin-top:8px" value="${state[q.id+"_other"]||""}">` : ""}
+        </div>`;
+      }).join("")}
+    </section>`;
+  }).join("") + lastSection;
+
+  root.querySelectorAll("[data-other-for]").forEach(inp=>{
+    inp.addEventListener("input", e=>{ state[e.target.dataset.otherFor+"_other"] = e.target.value; });
+  });
+  root.querySelectorAll("[data-text-for]").forEach(inp=>{
+    inp.addEventListener("input", e=>{
+      const id = e.target.dataset.textFor;
+      if (e.target.value) state[id] = e.target.value; else delete state[id];
+    });
+  });
+  const ksmEl = document.getElementById("ksmEndpoint");
+  if (ksmEl) ksmEl.addEventListener("input", e=> intake.ksmEndpoint = e.target.value);
+  const obsOtherEl = document.getElementById("observabilityOther");
+  if (obsOtherEl) obsOtherEl.addEventListener("input", e=> intake.observabilityOther = e.target.value);
+
+  wireOptsGroup(root, state, rerenderForm, ["observability","ksmExisting"]);
+  wireOptsGroup(root, intake, rerenderForm, null, ["observability","ksmExisting"]);
+}
+
+function summary(){
+  const r = assess();
+  const strip = h => h.replace(/<[^>]+>/g,"");
+  const accts = (intake.awsAccountIds||[]).map(a=>a.trim()).filter(Boolean);
+  const obs = Array.isArray(intake.observability) ? intake.observability : [];
+  const lines = ["KOMPASS FIT CHECK", "",
+    "Company: " + (intake.companyName || "—"),
+    "Filled out by: " + (intake.filledByName || "—") + " <" + (intake.filledByEmail || "—") + ">",
+    resolveField(CLOUD_Q.label, state) + ": " + (state.cloud || "—") + (state.cloud_other ? " (" + state.cloud_other + ")" : ""),
+    "Kubernetes clusters: " + (intake.clusterCount || "—"),
+    accountFieldInfo().label + ": " + (accts.length ? accts.join(", ") : "—"),
+    "Target PoV start date: " + (intake.povStartDate || "—"),
+    "Existing observability stack: " + (obs.length ? obs.join(", ") + (intake.observabilityOther ? " (" + intake.observabilityOther + ")" : "") : "—"),
+    "Existing kube-state-metrics: " + (intake.ksmExisting || "—") + (intake.ksmExisting==="Yes" && intake.ksmEndpoint ? " (" + intake.ksmEndpoint + ")" : ""),
+    "", "Verdict: " + r.head, r.sub, "", "ANSWERS"];
+  QUESTIONS.forEach(sec => sec.items.forEach(q => {
+    const v = state[q.id];
+    if (v == null || (Array.isArray(v) && !v.length)) return;
+    let disp = Array.isArray(v) ? v.join(", ") : v;
+    if (state[q.id+"_other"]) disp += ` (${state[q.id+"_other"]})`;
+    lines.push(`  ${resolveField(q.label, state)}: ${disp}`);
+  }));
+  if (state.auditLogging) lines.push(`  ${resolveField(AUDIT_LOGGING_Q.label, state)}: ${state.auditLogging}`);
+  lines.push("", "CAPABILITIES");
+  r.caps.forEach(c => {
+    lines.push(`  [${c.verdict==="in"?"IN PLAY":c.verdict==="risk"?"CAVEATED":"OUT"}] ${c.name}  —  pillar ${c.pillar}`);
+    c.notes.forEach(n => lines.push("      - " + strip(n)));
+  });
+  if (r.flags.length){ lines.push("", "INSTALL BLOCKERS TO PRE-EMPT"); r.flags.forEach(f=>lines.push("  - "+strip(f))); }
+  if (r.integrationNotes.length){ lines.push("", "INTEGRATION NOTES"); r.integrationNotes.forEach(n=>lines.push("  - "+strip(n))); }
+  if (r.sizing.length){ lines.push("", "SIZING"); r.sizing.forEach(sz=>lines.push("  - "+strip(sz))); }
+  lines.push("", "Generated with the Kompass fit check v2.2. Azure and Oracle OKE coverage are open questions — confirm internally. Cilium guidance is from the validated EKS+Cilium white paper (v2.5); Calico is not yet validated.");
+  return lines.join("\n");
+}
+
+function validateIntake(){
+  const errors = [];
+  if (!intake.companyName) errors.push("Company name is required.");
+  if (!intake.filledByName) errors.push("Filled-out-by name is required.");
+  if (!intake.filledByEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(intake.filledByEmail)) errors.push("A valid filled-out-by email is required.");
+  if (!intake.clusterCount) errors.push("Number of Kubernetes clusters is required.");
+  const accts = (intake.awsAccountIds||[]).map(a=>a.trim()).filter(Boolean);
+  if (!accts.length) errors.push(accountFieldInfo().err);
+  return errors;
+}
+
+document.getElementById("reset").addEventListener("click", () => {
+  Object.keys(state).forEach(k=>delete state[k]);
+  rerenderForm();
+});
+document.getElementById("submit").addEventListener("click", async () => {
+  const statusEl = document.getElementById("submitStatus");
+  const errors = validateIntake();
+  if (errors.length){ statusEl.textContent = errors.join(" "); statusEl.className = "submit-status err"; return; }
+
+  const r = assess();
+  const accts = (intake.awsAccountIds||[]).map(a=>a.trim()).filter(Boolean);
+  const payload = {
+    companyName: intake.companyName,
+    filledByName: intake.filledByName,
+    filledByEmail: intake.filledByEmail,
+    clusterCount: intake.clusterCount,
+    awsAccountIds: accts,
+    povStartDate: intake.povStartDate || null,
+    observability: Array.isArray(intake.observability) ? intake.observability : [],
+    ksmExisting: intake.ksmExisting || null,
+    ksmEndpoint: intake.ksmEndpoint || null,
+    answers: state,
+    verdict: r.head,
+    summaryText: summary()
+  };
+
+  const btn = document.getElementById("submit");
+  btn.disabled = true; btn.textContent = "Submitting…";
+  try {
+    const res = await fetch(API_URL, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
+    if (!res.ok) throw new Error("Request failed: " + res.status);
+    statusEl.textContent = "Submitted — thanks! Zesty has received your responses.";
+    statusEl.className = "submit-status ok";
+    btn.textContent = "Submitted";
+  } catch (err) {
+    statusEl.textContent = "Something went wrong sending this. Please let your Zesty contact know and try again shortly.";
+    statusEl.className = "submit-status err";
+    btn.disabled = false; btn.textContent = "Submit to Zesty";
+  }
+});
+
+renderIntake(); renderForm();
+</script>
+</body>
+</html>

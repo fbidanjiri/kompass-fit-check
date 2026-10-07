@@ -1,0 +1,247 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Kompass fit check - static form on S3/CloudFront, submissions go to
+  DynamoDB and email via SES. Single stack, deletable as a unit.
+
+Parameters:
+  FromEmail:
+    Type: String
+    Default: farshad.bidanjiri@zesty.co
+  ToEmails:
+    Type: CommaDelimitedList
+    Default: farshad.bidanjiri@zesty.co,ed.villalobos@zesty.co
+  PageObjectKey:
+    Type: String
+    Default: kompass-fit-check-78f701d1.html
+
+Resources:
+
+  NotifyEmailIdentity:
+    Type: AWS::SES::EmailIdentity
+    Properties:
+      EmailIdentity: !Ref FromEmail
+
+  NotifyEmailIdentity2:
+    Type: AWS::SES::EmailIdentity
+    Properties:
+      EmailIdentity: !Select [1, !Ref ToEmails]
+
+  SubmissionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: submissionId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: submissionId
+          KeyType: HASH
+
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${AWS::StackName}-oac"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        HttpVersion: http2
+        PriceClass: PriceClass_100
+        Origins:
+          - Id: SiteOrigin
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt OriginAccessControl.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: SiteOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # Managed-CachingOptimized
+          AllowedMethods: [GET, HEAD]
+          Compress: true
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudFrontRead
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${SiteBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: submit-handler
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: dynamodb:PutItem
+                Resource: !GetAtt SubmissionsTable.Arn
+              - Effect: Allow
+                Action: ses:SendEmail
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    ses:FromAddress: !Ref FromEmail
+
+  SubmissionsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs20.x
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref SubmissionsTable
+          FROM_EMAIL: !Ref FromEmail
+          TO_EMAILS: !Join [",", !Ref ToEmails]
+      Code:
+        ZipFile: |
+          const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+          const { DynamoDBDocumentClient, PutCommand } = require("@aws-sdk/lib-dynamodb");
+          const { SESv2Client, SendEmailCommand } = require("@aws-sdk/client-sesv2");
+          const { randomUUID } = require("crypto");
+
+          const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+          const ses = new SESv2Client({});
+          const TABLE = process.env.TABLE_NAME;
+          const FROM = process.env.FROM_EMAIL;
+          const TO = process.env.TO_EMAILS.split(",").map(function(s){ return s.trim(); }).filter(Boolean);
+
+          exports.handler = async (event) => {
+            try {
+              const body = JSON.parse(event.body || "{}");
+              const required = ["companyName", "filledByName", "filledByEmail"];
+              for (const f of required) {
+                if (!body[f]) {
+                  return { statusCode: 400, body: JSON.stringify({ error: "Missing " + f }) };
+                }
+              }
+              const submissionId = randomUUID();
+              const timestamp = new Date().toISOString();
+              const item = Object.assign({ submissionId, timestamp }, body);
+
+              await ddb.send(new PutCommand({ TableName: TABLE, Item: item }));
+
+              const subject = "Kompass fit check - " + body.companyName + " - " + (body.verdict || "submitted");
+              for (const recipient of TO) {
+                try {
+                  await ses.send(new SendEmailCommand({
+                    FromEmailAddress: FROM,
+                    Destination: { ToAddresses: [recipient] },
+                    Content: { Simple: {
+                      Subject: { Data: subject },
+                      Body: { Text: { Data: body.summaryText || JSON.stringify(body, null, 2) } }
+                    }}
+                  }));
+                } catch (emailErr) {
+                  console.error("Notification email to " + recipient + " failed, submission was still saved:", emailErr);
+                }
+              }
+
+              return { statusCode: 200, body: JSON.stringify({ ok: true, submissionId: submissionId }) };
+            } catch (err) {
+              console.error(err);
+              return { statusCode: 500, body: JSON.stringify({ error: "Internal error" }) };
+            }
+          };
+
+  SubmissionsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${SubmissionsFunction}"
+      RetentionInDays: 30
+
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub "${AWS::StackName}-api"
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins: ["*"]
+        AllowMethods: ["POST", "OPTIONS"]
+        AllowHeaders: ["Content-Type"]
+
+  HttpApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt SubmissionsFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  HttpApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "POST /submissions"
+      Target: !Sub "integrations/${HttpApiIntegration}"
+
+  HttpApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: "$default"
+      AutoDeploy: true
+
+  ApiInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SubmissionsFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*/submissions"
+
+Outputs:
+  SiteBucketName:
+    Value: !Ref SiteBucket
+  DistributionId:
+    Value: !Ref Distribution
+  DistributionDomainName:
+    Value: !GetAtt Distribution.DomainName
+  ApiEndpoint:
+    Value: !GetAtt HttpApi.ApiEndpoint
+  TableName:
+    Value: !Ref SubmissionsTable
+  PageUrl:
+    Value: !Sub "https://${Distribution.DomainName}/${PageObjectKey}"
